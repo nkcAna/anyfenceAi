@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Real-Time Measurements</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="location-tracker.html">Location Tracker</a></li>
+      </ul>
+    </nav>
+
+    <div class="data-head">Real-Time Measurements</div>
+
+    <div class="data-container">
+      <div class="data-item">
+        <i class="fas fa-map-marker-alt"></i>
+        <h2>Location</h2>
+        <p class="value" id="location">Loading...</p>
+      </div>
+      <div class="data-item">
+        <i class="fas fa-thermometer-half"></i>
+        <h2>Temperature</h2>
+        <p class="value" id="temperature">Loading...</p>
+      </div>
+      <div class="data-item">
+        <i class="fas fa-tint"></i>
+        <h2>Humidity</h2>
+        <p class="value" id="humidity">Loading...</p>
+      </div>
+      <div class="data-item">
+        <i class="fas fa-cloud-sun"></i>
+        <h2>Heat Index</h2>
+        <p class="value" id="heatIndex">Loading...</p>
+      </div>
+      <div class="data-item">
+        <i class="fas fa-arrows-alt"></i>
+        <h2>Acceleration</h2>
+        <p class="value" id="acceleration">Loading...</p>
+      </div>
+      <div class="data-item">
+        <i class="fas fa-sync-alt"></i>
+        <h2>Gyro</h2>
+        <p class="value" id="gyro">Loading...</p>
+      </div>
+      <div class="data-item">
+        <i class="fas fa-running"></i>
+        <h2>Activity</h2>
+        <p class="value" id="activity">Loading...</p>
+      </div>
+    </div>
+
+    <!-- the scripts for products you want to access must be added -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBHIZqnFvXsBWVeVVx0QvRMJq2gXGZfBt7c",
+        authDomain: "anyfenceai.firebaseapp.com",
+        databaseURL:
+          "https://anyfenceai-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "anyfenceai",
+        storageBucket: "anyfenceai.appspot.com",
+        messagingSenderId: "605283112367",
+        appId: "1:605283112367:web:4c933a1e41d926be6a8b5a",
+        measurementId: "G-MLKKPP5F4H",
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+
+      // getting reference to the database
+      var database = firebase.database();
+
+      // Reference to the "/gpsData" node
+      var dataRef = database.ref("gpsData");
+
+      // Function to determine device activity based on accelerometer readings
+      function detectActivity(x, y, z) {
+        const magnitude = Math.sqrt(x * x + y * y + z * z);
+        const thresholdStationary = 9.0; // Adjusted threshold to account for magnitude range
+        const thresholdSmallMovement = 9.2; // Adjusted threshold for detecting small movement
+        const thresholdLargeMovement = 9.5; // Higher threshold for detecting large movement
+
+        let activity = "Stationary";
+
+        if (
+          magnitude > thresholdStationary &&
+          magnitude < thresholdSmallMovement
+        ) {
+          activity = "Small Movement";
+        } else if (
+          magnitude >= thresholdSmallMovement &&
+          magnitude < thresholdLargeMovement
+        ) {
+          activity = "Moderate Movement";
+        } else if (magnitude >= thresholdLargeMovement) {
+          activity = "Large Movement";
+        }
+
+        console.log(`Detected activity: ${activity}`);
+        document.getElementById("activity").innerText = activity;
+      }
+
+      // Listen for changes to the "gpsData" node
+      dataRef.on("value", function (snapshot) {
+        snapshot.forEach(function (childSnapshot) {
+          var data = childSnapshot.val();
+          document.getElementById(
+            "location"
+          ).innerHTML = `Lat: ${data.location.latitude}, Lon: ${data.location.longitude}`;
+          document.getElementById(
+            "temperature"
+          ).innerHTML = `${data.temperature} &#8451;`;
+          document.getElementById("humidity").innerHTML = `${data.humidity} %`;
+          document.getElementById(
+            "heatIndex"
+          ).innerHTML = `${data.heatIndex} &#8451;`;
+          document.getElementById(
+            "acceleration"
+          ).innerHTML = `X: ${data.accelX}, Y: ${data.accelY}, Z: ${data.accelZ}`;
+          document.getElementById(
+            "gyro"
+          ).innerHTML = `X: ${data.gyroX}, Y: ${data.gyroY}, Z: ${data.gyroZ}`;
+          detectActivity(data.accelX, data.accelY, data.accelZ);
+        });
+      });
+    </script>
+  </body>
+</html>
